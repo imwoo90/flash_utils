@@ -1,1 +1,2 @@
 add_subdirectory(nvsTests)
+add_subdirectory(fcbTests)
