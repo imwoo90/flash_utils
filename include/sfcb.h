@@ -1,144 +1,123 @@
-/*
- * 1. append
- * 2. walk
- * 3. get_next
- * 4. read
- * 5. rotate
- * 6. is_empty
- * 7. append_force
- * 
- * 1. mount
- */
-
 /* SFCB: Simple Flash Circular Buffer
- * 
- * Copyright (c) 2024 inmyung.woo
- * 
+ *
+ * Copyright (c) 2024 imwoo90
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef SFCB_H_
 #define SFCB_H_
 
-#include <fil.h>
+#include <fcb.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @brief Simple Flash Circular Buffer File system structure
- */
-struct sfcb_fs {
-	 /** File system offset in flash **/
-	off_t offset;
-	/** File system is split into sectors, each sector must be multiple of erase-block-size */
-	uint16_t sector_size;
-	/** Number of sectors in the file system */
-	uint16_t sector_count;
-    /* APIs to implement */
-	int (*impl_init)();
-	int (*impl_mutex_lock_forever)();
-	int (*impl_mutex_unlock)();
+	/**
+	 * @brief Simple Flash Circular Buffer File system structure
+	 */
+	struct sfcb_fs
+	{
+		struct fcb _fcb;
 
-    off_t latest_loc; // location for new element
-    off_t oldest_loc; // oldest element header location
-    uint32_t align_mask;
-};
+		uint32_t total_data_size;
+	};
 
-/**
- * @brief Simple Flash Circular Buffer File system structure
- */
-struct sfcb_entry {
-	uint32_t fe_elem_off;
-	/**< Offset from the start of the sector to beginning of element. */
+	/**
+	 * @brief Mount an SFCB file system onto the flash device specified in @p fs.
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @retval 0 Success
+	 * @retval -ERRNO errno code if error
+	 */
+	int sfcb_mount(struct sfcb_fs *fs);
 
-    void* fe_data;
-	uint32_t fe_data_len; /**< Size of data area in fcb entry*/
-};
+	/**
+	 * @brief Clear the SFCB file system from flash.
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @retval 0 Success
+	 * @retval -ERRNO errno code if error
+	 */
+	int sfcb_clear(struct sfcb_fs *fs);
 
-/**
- * @brief Mount an SFCB file system onto the flash device specified in @p fs.
- *
- * @param[in] fs Pointer to file system
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- */
-int sfcb_mount(struct sfcb_fs* fs);
+	/**
+	 * Appends an entry to circular buffer.
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @param[in] data Pointer of data which are expected to be written as the entry
+	 * @param[in] len Length of data which are expected to be written as the entry
+	 *            payload.
+	 *
+	 * @return 0 on success, -1 on failure because the expected data size will overflow, other on failure.
+	 */
+	int sfcb_append(struct sfcb_fs *fs, const void *data, uint32_t len);
 
-/**
- * @brief Clear the SFCB file system from flash.
- *
- * @param[in] fs Pointer to file system
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- */
-int sfcb_clear(struct sfcb_fs* fs);
+	/**
+	 * Appends an entry to circular buffer forcibly when failed because expected data size overflowed
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @param[in] data Pointer of data which are expected to be written as the entry
+	 * @param[in] len Length of data which are expected to be written as the entry
+	 *            payload.
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int sfcb_append_forcibly(struct sfcb_fs *fs, const void *data, uint32_t len);
 
-/**
- * Appends an entry to circular buffer.
- *
- * @param[in] fs Pointer to file system
- * @param[in] data Pointer of data which are expected to be written as the entry
- * @param[in] len Length of data which are expected to be written as the entry
- *            payload.
- *
- * @return 0 on success, -1 on failure because the expected data size will overflow, other on failure.
- */
-int sfcb_append(struct sfcb_fs* fs, const void* data, uint32_t len);
+	/**
+	 * read an oldest entry to circular buffer
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @param[in] buf Pointer of buf which is read buffer
+	 * @param[in] len Length of buf
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int sfcb_read(struct sfcb_fs *fs, const void *buf, uint32_t len);
 
-/**
- * Appends an entry to circular buffer forcibly when failed because expected data size overflowed
- *
- * @param[in] fs Pointer to file system
- * @param[in] data Pointer of data which are expected to be written as the entry
- * @param[in] len Length of data which are expected to be written as the entry
- *            payload.
- *
- * @return 0 on success, non-zero on failure.
- */
-int sfcb_append_forcibly(struct sfcb_fs* fs, const void* data, uint32_t len);
+	/**
+	 * Pop an oldest entry to circular buffer
+	 *
+	 * @param[in] fs Pointer to file system
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int sfcb_pop(struct sfcb_fs *fs);
 
-/**
- * Rotate SFCB
- *
- * Function erases the data from oldest sector. Upon that the next sector
- * becomes the oldest.
- *
- * @param[in] fs Pointer to file system
- */
-int sfcb_rotate(struct sfcb_fs* fs);
+	/**
+	 * read and pop an oldest entry to circular buffer
+	 *
+	 * @param[in] fs Pointer to file system
+	 * @param[in] buf Pointer of buf which is read buffer
+	 * @param[in] len Length of buf
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
+	int sfcb_read_and_pop(struct sfcb_fs *fs, const void *buf, uint32_t len);
 
-/**
- * Check whether SFCB has any data.
- *
- * @param[in] fs Pointer to file system
- *
- * @return Positive value if fcb is empty, otherwise 0.
- */
-int sfcb_is_empty(struct sfcb_fs* fs);
+	/**
+	 * Rotate SFCB
+	 *
+	 * Function erases the data from oldest sector. Upon that the next sector
+	 * becomes the oldest.
+	 *
+	 * @param[in] fs Pointer to file system
+	 */
+	int sfcb_rotate(struct sfcb_fs *fs);
 
-/**
- * Get next sfcb entry information for the size of data to read.
- *
- * @param[in] fs Pointer to file system
- * @param[in,out] entry entry information (element location, data length)
- *
- * @return 0 on success, non-zero on failure.
- */
-int sfcb_getnext(struct sfcb_fs* fs, struct sfcb_entry* entry);
+	/**
+	 * Check whether SFCB has any data.
+	 *
+	 * @param[in] fs Pointer to file system
+	 *
+	 * @return Positive value if fcb is empty, otherwise 0.
+	 */
+	int sfcb_is_empty(struct sfcb_fs *fs);
 
-/**
- * Read data of entry.
- *
- * @param[in] fs Pointer to file system
- * @param[in, out] entry entry for read data
- *
- * @return 0 on success, non-zero on failure.
- */
-int sfcb_read(struct sfcb_fs* fs, struct sfcb_entry* entry);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* SFCB_H_ */

@@ -1,7 +1,7 @@
 /* FIL: Flash interface Layer
- * 
- * Copyright (c) 2024 inmyung.woo
- * 
+ *
+ * Copyright (c) 2024 imwoo90
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "fil_priv.h"
@@ -10,15 +10,18 @@ static bool g_is_ready = false;
 static struct fil g_fil;
 static struct flash_parameters g_flash_parameters;
 
-const struct flash_parameters* fil_get_flash_parameters() {
+const struct flash_parameters *fil_get_flash_parameters()
+{
     return &g_flash_parameters;
 }
 
-bool fil_is_ready() {
+bool fil_is_ready()
+{
     return g_is_ready;
 }
 
-int fil_init(struct fil* pfil, struct flash_parameters* params) {
+int fil_init(struct fil *pfil, struct flash_parameters *params)
+{
     if (!pfil || !params)
         return -EINVAL;
     g_is_ready = true;
@@ -27,7 +30,8 @@ int fil_init(struct fil* pfil, struct flash_parameters* params) {
     return 0;
 }
 
-int fil_read(off_t offset, void *data, size_t len) {
+int fil_read(off_t offset, void *data, size_t len)
+{
     if (g_fil.read == NULL)
         return -EPERM;
 
@@ -41,7 +45,8 @@ int fil_read(off_t offset, void *data, size_t len) {
     return ret;
 }
 
-int fil_write(off_t offset, const void *data, size_t len) {
+int fil_write(off_t offset, const void *data, size_t len)
+{
     if (g_fil.write == NULL)
         return -EPERM;
 
@@ -55,7 +60,8 @@ int fil_write(off_t offset, const void *data, size_t len) {
     return ret;
 }
 
-int fil_erase(off_t offset, size_t len) {
+int fil_erase(off_t offset, size_t len)
+{
     if (g_fil.erase == NULL)
         return -EPERM;
 
