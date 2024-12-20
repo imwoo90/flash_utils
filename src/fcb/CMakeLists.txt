@@ -5,6 +5,7 @@ target_compile_definitions(flash_utils PUBLIC
 
 target_sources(flash_utils PUBLIC
   fcb_append.c
+  fcb_pop.c
   fcb.c
   fcb_elem_info.c
   fcb_getnext.c

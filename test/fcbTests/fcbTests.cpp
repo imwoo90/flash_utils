@@ -70,6 +70,7 @@ int fcb_append_data(fcb *fcbp, const void *src, uint16_t len)
 
 int fcb_walk_cb_test(struct fcb_entry_ctx *loc_ctx, void *arg)
 {
+    int test_type = *(int *)arg;
     char test_str_buf[100];
     struct fcb_entry *loc = &loc_ctx->loc;
 
@@ -79,10 +80,17 @@ int fcb_walk_cb_test(struct fcb_entry_ctx *loc_ctx, void *arg)
         return -__LINE__;
     }
 
-    // if (loc->fe_sector == 0 || loc->fe_sector == (g_fcb.f_sector_cnt - 1) * g_fcb.f_sector_size)
-    // {
-    //     printf("%s\n", test_str_buf);
-    // }
+    if (test_type == 0)
+    {
+        if (loc->fe_sector == 0 || loc->fe_sector == (g_fcb.f_sector_cnt - 1) * g_fcb.f_sector_size)
+        {
+            printf("%s\n", test_str_buf);
+        }
+    }
+    else if (test_type == 1)
+    {
+        printf("%s\n", test_str_buf);
+    }
     return 0;
 }
 
@@ -91,6 +99,8 @@ int write_read()
     int len, rc;
     int i = 0, r_cnt = 0;
     char test_str_buf[100];
+
+    printf("read_write test!!!!!!\n");
 
     int cycle = 5; // test 5cycle write
     int rotate_cnt = (cycle - 1) * (sizeof(flash_sim) / g_fcb.f_sector_size);
@@ -110,17 +120,56 @@ int write_read()
         r_cnt += 1;
     } while (true);
 
-    rc = fcb_walk(&g_fcb, -1, fcb_walk_cb_test, NULL);
+    int test_type = 0;
+    rc = fcb_walk(&g_fcb, -1, fcb_walk_cb_test, &test_type);
     if (rc)
         return rc;
 
     return 0;
 }
 
-TEST(NVSTest, nvsTest)
+int test_pop()
+{
+    char test_str_buf[100];
+    struct fcb_entry loc;
+
+    printf("pop test!@!@!!!!!!\n");
+    while (fcb_pop(&g_fcb, &loc) == 0)
+    {
+        int rc = fcb_flash_read(&g_fcb, loc.fe_sector, loc.fe_data_off, test_str_buf, loc.fe_data_len);
+        if (rc)
+        {
+            return -__LINE__;
+        }
+    };
+
+    int len;
+    for (int i = 0; i < 700000; i++)
+    {
+        len = sprintf(test_str_buf, "hello test %d", i);
+        if (fcb_append_data(&g_fcb, test_str_buf, len + 1))
+            return -__LINE__;
+
+        if (i >= 5)
+        {
+            if (fcb_pop(&g_fcb, &loc))
+                return -__LINE__;
+        }
+    }
+
+    int test_type = 1;
+    int rc = fcb_walk(&g_fcb, -1, fcb_walk_cb_test, &test_type);
+    if (rc)
+        return rc;
+
+    return 0;
+}
+
+TEST(FCBTest, fcbTest)
 {
     EXPECT_EQ(fcb_init(&g_fcb), 0);
     EXPECT_EQ(write_read(), 0);
+    EXPECT_EQ(test_pop(), 0);
 }
 
 int main(int argc, char **argv)

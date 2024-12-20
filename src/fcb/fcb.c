@@ -137,6 +137,7 @@ int fcb_init(struct fcb *fcbp)
 		newest = oldest = 0;
 	}
 	fcbp->f_align = align;
+	fcbp->f_oldest_elem_off = 0;
 	fcbp->f_oldest = oldest_sector;
 	fcbp->f_active.fe_sector = newest_sector;
 	fcbp->f_active.fe_elem_off = fcb_len_in_flash(fcbp, sizeof(struct fcb_disk_area));
@@ -154,6 +155,17 @@ int fcb_init(struct fcb *fcbp)
 		{
 			break;
 		}
+	}
+
+	if (!fcb_is_empty(fcbp))
+	{
+		// find f_oldest_elem_off
+		struct fcb_entry loc;
+		loc.fe_sector = -1;
+		rc = fcb_getnext_nolock(fcbp, &loc);
+		if (rc)
+			return rc;
+		fcbp->f_oldest_elem_off = loc.fe_elem_off;
 	}
 	return rc;
 }
@@ -320,6 +332,7 @@ int fcb_offset_last_n(struct fcb *fcbp, uint8_t entries, struct fcb_entry *last_
 
 	i = 0;
 	(void)memset(&loc, 0, sizeof(loc));
+	loc.fe_sector = -1;
 	while (!fcb_getnext(fcbp, &loc))
 	{
 		if (i == 0)

@@ -44,6 +44,7 @@ int fcb_rotate(struct fcb *fcb)
 		fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 		fcb->f_active_id++;
 	}
+	fcb->f_oldest_elem_off = 0;
 	fcb->f_oldest = fcb_getnext_sector(fcb, fcb->f_oldest);
 out:
 	if (fcb->impl_mutex_unlock)

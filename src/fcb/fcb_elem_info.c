@@ -131,7 +131,7 @@ int fcb_elem_info(struct fcb *_fcb, struct fcb_entry *loc)
 {
 	int rc;
 	uint8_t em;
-	uint8_t fl_em;
+	uint8_t fl_em[_fcb->f_align];
 	off_t off;
 
 	rc = fcb_elem_endmarker(_fcb, loc, &em);
@@ -147,7 +147,7 @@ int fcb_elem_info(struct fcb *_fcb, struct fcb_entry *loc)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) && (fl_em != em))
+	if (IS_ENABLED(CONFIG_FCB_ALLOW_FIXED_ENDMARKER) && (fl_em[0] != em))
 	{
 		rc = fcb_elem_crc8(_fcb, loc, &em);
 		if (rc)
@@ -156,9 +156,15 @@ int fcb_elem_info(struct fcb *_fcb, struct fcb_entry *loc)
 		}
 	}
 
-	if (fl_em != em)
+	if (fl_em[0] != em)
 	{
 		return -EBADMSG;
 	}
+
+	if (fl_em[1] == 0)
+	{
+		return -EBADMSG;
+	}
+
 	return 0;
 }

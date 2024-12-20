@@ -124,6 +124,7 @@ extern "C"
         // struct k_mutex f_mtx;
         /**< Locking for accessing the FCB data, internal state */
 
+        uint32_t f_oldest_elem_off;
         uint32_t f_oldest;
         /**< Pointer to flash sector containing the oldest data,
          * internal state
@@ -193,6 +194,20 @@ extern "C"
      * @return 0 on success, non-zero on failure.
      */
     int fcb_append_finish(struct fcb *fcbp, struct fcb_entry *append_loc);
+
+    /**
+     * Pop an entry to circular buffer.
+     *
+     * When poping the
+     * contents for the entry, use loc->fe_sector and loc->fe_data_off with
+     * flash_area_read() to fcb flash_area.
+     *
+     * @param[in] fcbp FCB instance structure.
+     * @param[out] pop_loc entry location information
+     *
+     * @return 0 on success, non-zero on failure.
+     */
+    int fcb_pop(struct fcb *fcbp, struct fcb_entry *pop_loc);
 
     /**
      * FCB Walk callback function type.

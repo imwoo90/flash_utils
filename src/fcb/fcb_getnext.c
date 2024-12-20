@@ -52,6 +52,7 @@ int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc)
 		 * Find the first one we have in flash.
 		 */
 		loc->fe_sector = fcb->f_oldest;
+		loc->fe_elem_off = fcb->f_oldest_elem_off;
 	}
 	if (loc->fe_elem_off == 0U)
 	{
