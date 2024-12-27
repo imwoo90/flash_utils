@@ -98,16 +98,6 @@ extern "C"
 	int sfcb_read_and_pop(struct sfcb_fs *fs, const void *buf, uint32_t len);
 
 	/**
-	 * Rotate SFCB
-	 *
-	 * Function erases the data from oldest sector. Upon that the next sector
-	 * becomes the oldest.
-	 *
-	 * @param[in] fs Pointer to file system
-	 */
-	int sfcb_rotate(struct sfcb_fs *fs);
-
-	/**
 	 * Check whether SFCB has any data.
 	 *
 	 * @param[in] fs Pointer to file system

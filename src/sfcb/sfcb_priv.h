@@ -14,8 +14,7 @@ extern "C"
 {
 #endif
 
-#define SFCB_HEADER_ID 0xcb
-#define CRC16_SEED 0xffff
+#define FCB_CRC_SZ sizeof(uint8_t)
 
     typedef enum
     {
